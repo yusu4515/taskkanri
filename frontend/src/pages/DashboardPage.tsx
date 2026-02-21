@@ -16,7 +16,7 @@ import { tasksApi } from "../api/tasks";
 import { dashboardApi } from "../api/dashboard";
 import { useAuth } from "../hooks/useAuth";
 import TaskCard from "../components/tasks/TaskCard";
-import { CATEGORY_LABELS } from "../types";
+
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                   <Pie
                     data={summary.category_distribution.map((d) => ({
                       ...d,
-                      name: CATEGORY_LABELS[d.category as keyof typeof CATEGORY_LABELS] ?? d.category,
+                      name: d.category,
                     }))}
                     dataKey="count"
                     nameKey="name"
