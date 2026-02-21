@@ -1,6 +1,7 @@
 import { Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useTaskNotifications } from "../../hooks/useTaskNotifications";
+import PomodoroTimer from "../tasks/PomodoroTimer";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -42,6 +43,32 @@ export default function Layout() {
             <span className="text-lg">📋</span>
             タスク一覧
           </NavLink>
+          <NavLink
+            to="/calendar"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`
+            }
+          >
+            <span className="text-lg">📅</span>
+            カレンダー
+          </NavLink>
+          <NavLink
+            to="/weekly-review"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`
+            }
+          >
+            <span className="text-lg">📊</span>
+            週次レビュー
+          </NavLink>
         </nav>
 
         <div className="px-3 py-4 border-t border-gray-100">
@@ -61,6 +88,9 @@ export default function Layout() {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+
+      {/* ポモドーロタイマー（全画面フローティング） */}
+      <PomodoroTimer />
     </div>
   );
 }

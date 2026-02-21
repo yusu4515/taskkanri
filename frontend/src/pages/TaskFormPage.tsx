@@ -8,6 +8,7 @@ import { tasksApi } from "../api/tasks";
 import type { TaskCreate } from "../types";
 import { ESTIMATED_MINUTES_OPTIONS } from "../types";
 import { useCategories } from "../hooks/useCategories";
+import { useTemplates } from "../hooks/useTemplates";
 
 const RECURRENCE_OPTIONS = [
   { value: "", label: "なし" },
@@ -35,8 +36,12 @@ export default function TaskFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { categories, addCategory, removeCategory } = useCategories();
+  const { templates, addTemplate, removeTemplate } = useTemplates();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
   const { data: existingTask } = useQuery({
     queryKey: ["task", id],
@@ -53,6 +58,7 @@ export default function TaskFormPage() {
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -152,6 +158,42 @@ export default function TaskFormPage() {
     }
   };
 
+  const handleApplyTemplate = (tplId: string) => {
+    const tpl = templates.find((t) => t.id === tplId);
+    if (!tpl) return;
+    reset({
+      title: tpl.title,
+      due_date: format(new Date(), "yyyy-MM-dd"),
+      importance: tpl.importance,
+      estimated_minutes: tpl.estimated_minutes?.toString() ?? "",
+      actual_minutes: "",
+      category: tpl.category,
+      memo: tpl.memo,
+      depends_on_id: "",
+      parent_task_id: "",
+      recurrence: tpl.recurrence,
+    });
+    setShowTemplates(false);
+    toast.success(`テンプレート「${tpl.name}」を適用しました`);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!templateName.trim()) return;
+    const values = getValues();
+    addTemplate({
+      name: templateName.trim(),
+      title: values.title,
+      importance: Number(values.importance),
+      estimated_minutes: values.estimated_minutes ? Number(values.estimated_minutes) : null,
+      category: values.category,
+      recurrence: values.recurrence,
+      memo: values.memo,
+    });
+    setTemplateName("");
+    setShowSaveTemplate(false);
+    toast.success("テンプレートを保存しました");
+  };
+
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const availableDeps = taskList?.tasks.filter(
@@ -172,6 +214,54 @@ export default function TaskFormPage() {
           {isEdit ? "タスクを編集" : "タスクを追加"}
         </h2>
       </div>
+
+      {/* テンプレート選択（新規作成時のみ） */}
+      {!isEdit && (
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => setShowTemplates((s) => !s)}
+            className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1"
+          >
+            📋 {showTemplates ? "▲ テンプレートを閉じる" : "▼ テンプレートから作成"}
+          </button>
+
+          {showTemplates && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+              {templates.length === 0 ? (
+                <p className="text-sm text-gray-400">
+                  テンプレートがありません。フォームを入力後に「テンプレートとして保存」できます。
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {templates.map((tpl) => (
+                    <div
+                      key={tpl.id}
+                      className="flex items-center gap-1 bg-white border border-blue-200 rounded-lg px-3 py-1.5 text-sm"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleApplyTemplate(tpl.id)}
+                        className="text-blue-700 hover:text-blue-900 font-medium"
+                      >
+                        {tpl.name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeTemplate(tpl.id)}
+                        className="text-gray-300 hover:text-red-400 ml-1"
+                        title="削除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="card space-y-5">
         {/* タイトル */}
@@ -389,6 +479,46 @@ export default function TaskFormPage() {
             rows={3}
             placeholder="詳細・参考情報など"
           />
+        </div>
+
+        {/* テンプレートとして保存 */}
+        <div className="border-t border-gray-100 pt-3">
+          {showSaveTemplate ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSaveTemplate(); } }}
+                placeholder="テンプレート名（例：週次報告）"
+                className="input text-sm py-1.5 flex-1"
+                maxLength={30}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSaveTemplate}
+                className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors"
+              >
+                保存
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowSaveTemplate(false); setTemplateName(""); }}
+                className="px-3 py-1.5 text-gray-400 hover:text-gray-600 text-sm"
+              >
+                キャンセル
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowSaveTemplate(true)}
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              📋 このフォームの内容をテンプレートとして保存
+            </button>
+          )}
         </div>
 
         {/* アクションボタン */}

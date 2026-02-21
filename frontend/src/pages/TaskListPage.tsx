@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -119,16 +119,25 @@ export default function TaskListPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState<SortKey>("score");
   const [orderedIds, setOrderedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const { categories } = useCategories();
   const queryClient = useQueryClient();
 
+  // 検索デバウンス（300ms）
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["tasks", statusFilter, categoryFilter, sort],
+    queryKey: ["tasks", statusFilter, categoryFilter, sort, debouncedSearch],
     queryFn: () =>
       tasksApi.list({
         status: statusFilter || undefined,
         category: categoryFilter || undefined,
         sort,
+        search: debouncedSearch || undefined,
       }),
   });
 
@@ -200,6 +209,28 @@ export default function TaskListPage() {
 
       {/* フィルター・ソート */}
       <div className="card mb-6 flex flex-wrap gap-4">
+        <div className="w-full">
+          <label className="block text-xs font-medium text-gray-500 mb-1">キーワード検索</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="タイトル・メモを検索..."
+              className="input pl-8 py-1.5 text-sm w-full"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">ステータス</label>
           <select

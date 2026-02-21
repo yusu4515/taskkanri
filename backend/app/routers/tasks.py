@@ -108,6 +108,7 @@ def create_task(
 def list_tasks(
     status_filter: Optional[TaskStatus] = Query(None, alias="status"),
     category: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     sort: str = Query("score", regex="^(score|due_date|importance|created_at|manual)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -121,6 +122,9 @@ def list_tasks(
         q = q.filter(Task.status == status_filter)
     if category:
         q = q.filter(Task.category == category)
+    if search:
+        keyword = f"%{search.strip()}%"
+        q = q.filter(Task.title.ilike(keyword) | Task.memo.ilike(keyword))
 
     tasks = q.all()
 

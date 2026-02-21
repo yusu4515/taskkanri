@@ -5,6 +5,8 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import TaskListPage from "./pages/TaskListPage";
 import TaskFormPage from "./pages/TaskFormPage";
+import CalendarPage from "./pages/CalendarPage";
+import WeeklyReviewPage from "./pages/WeeklyReviewPage";
 import Layout from "./components/layout/Layout";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -38,6 +40,8 @@ export default function App() {
           <Route path="tasks" element={<TaskListPage />} />
           <Route path="tasks/new" element={<TaskFormPage />} />
           <Route path="tasks/:id/edit" element={<TaskFormPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="weekly-review" element={<WeeklyReviewPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

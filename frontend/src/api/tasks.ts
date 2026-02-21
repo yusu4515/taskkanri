@@ -8,7 +8,7 @@ import type {
 } from "../types";
 
 export const tasksApi = {
-  list: (params?: { status?: string; category?: string; sort?: string }) =>
+  list: (params?: { status?: string; category?: string; sort?: string; search?: string }) =>
     api.get<TaskListResponse>("/tasks", { params }).then((r) => r.data),
 
   create: (data: TaskCreate) =>

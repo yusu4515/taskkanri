@@ -49,6 +49,20 @@ def get_summary(
 
     achievement_rate = round(completed / total * 100, 1) if total > 0 else 0.0
 
+    # 今週の実績時間合計（月曜始まり）
+    week_start = today_start - timedelta(days=today_start.weekday())
+    weekly_actual_minutes = (
+        db.query(func.sum(Task.actual_minutes))
+        .filter(
+            Task.user_id == current_user.id,
+            Task.status == TaskStatus.completed,
+            Task.completed_at >= week_start,
+            Task.actual_minutes.isnot(None),
+        )
+        .scalar()
+        or 0
+    )
+
     # カテゴリ別分布
     category_stats = (
         db.query(Task.category, func.count(Task.id))
@@ -85,6 +99,7 @@ def get_summary(
         "today_due": today_due,
         "today_completed": today_completed,
         "achievement_rate": achievement_rate,
+        "weekly_actual_minutes": int(weekly_actual_minutes),
         "category_distribution": [
             {"category": str(cat) if cat else "other", "count": cnt}
             for cat, cnt in category_stats

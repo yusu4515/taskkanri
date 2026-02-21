@@ -91,8 +91,20 @@ export interface DashboardSummary {
   today_due: number;
   today_completed: number;
   achievement_rate: number;
+  weekly_actual_minutes: number;
   category_distribution: { category: string; count: number }[];
   weekly_completed: { date: string; count: number }[];
+}
+
+export interface TaskTemplate {
+  id: string;
+  name: string;
+  title: string;
+  importance: number;
+  estimated_minutes: number | null;
+  category: string;
+  recurrence: string;
+  memo: string;
 }
 
 export const ESTIMATED_MINUTES_OPTIONS = [

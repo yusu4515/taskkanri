@@ -15,7 +15,6 @@ import toast from "react-hot-toast";
 import { tasksApi } from "../api/tasks";
 import { dashboardApi } from "../api/dashboard";
 import { useAuth } from "../hooks/useAuth";
-import TaskCard from "../components/tasks/TaskCard";
 
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
@@ -128,13 +127,13 @@ export default function DashboardPage() {
 
       {/* サマリーカード */}
       {summaryLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="card h-24 animate-pulse bg-gray-100" />
           ))}
         </div>
       ) : summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="card text-center">
             <p className="text-3xl font-bold text-blue-600">{summary.total}</p>
             <p className="text-sm text-gray-500 mt-1">総タスク数</p>
@@ -150,6 +149,18 @@ export default function DashboardPage() {
           <div className="card text-center">
             <p className="text-3xl font-bold text-red-500">{summary.overdue}</p>
             <p className="text-sm text-gray-500 mt-1">期限超過</p>
+          </div>
+          <div className="card text-center">
+            <p className="text-3xl font-bold text-purple-600">
+              {summary.weekly_actual_minutes >= 60
+                ? `${Math.floor(summary.weekly_actual_minutes / 60)}h${
+                    summary.weekly_actual_minutes % 60
+                      ? `${summary.weekly_actual_minutes % 60}m`
+                      : ""
+                  }`
+                : `${summary.weekly_actual_minutes}m`}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">今週の実績</p>
           </div>
         </div>
       )}
