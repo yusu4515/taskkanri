@@ -10,8 +10,11 @@ from app.routers import auth, dashboard, tasks, users
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 起動時にテーブルを作成
-    Base.metadata.create_all(bind=engine)
+    # DB接続が取れる場合のみテーブル作成（接続失敗でも起動を止めない）
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"DB接続スキップ: {e}")
     yield
 
 
