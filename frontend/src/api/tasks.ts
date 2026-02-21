@@ -29,9 +29,15 @@ export const tasksApi = {
   uncomplete: (id: number) =>
     api.patch<Task>(`/tasks/${id}`, { status: "pending" }).then((r) => r.data),
 
+  start: (id: number) =>
+    api.patch<Task>(`/tasks/${id}`, { status: "in_progress" }).then((r) => r.data),
+
   getTodayFocus: () =>
     api.get<TodayFocusResponse>("/tasks/today-focus").then((r) => r.data),
 
   approveTodayFocus: () =>
     api.post("/tasks/today-focus/approve").then((r) => r.data),
+
+  reorder: (taskIds: number[]) =>
+    api.post("/tasks/reorder", { task_ids: taskIds }).then((r) => r.data),
 };

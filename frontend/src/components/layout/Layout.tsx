@@ -1,8 +1,10 @@
 import { Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useTaskNotifications } from "../../hooks/useTaskNotifications";
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  useTaskNotifications();
 
   return (
     <div className="min-h-screen flex">

@@ -14,15 +14,22 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
         print("DB: テーブル作成完了")
-        # category カラムを Enum → VARCHAR(100) に移行
+        # スキーママイグレーション（冪等）
+        migrations = [
+            "ALTER TABLE tasks ALTER COLUMN category TYPE VARCHAR(100)",
+            "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS actual_minutes INTEGER",
+            "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence VARCHAR(20)",
+            "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS parent_task_id INTEGER REFERENCES tasks(id)",
+            "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS manual_order INTEGER",
+        ]
         with engine.connect() as conn:
-            conn.execute(
-                __import__("sqlalchemy").text(
-                    "ALTER TABLE tasks ALTER COLUMN category TYPE VARCHAR(100)"
-                )
-            )
+            for sql in migrations:
+                try:
+                    conn.execute(__import__("sqlalchemy").text(sql))
+                except Exception as e:
+                    print(f"Migration skipped: {e}")
             conn.commit()
-            print("DB: category カラム型変更完了")
+            print("DB: マイグレーション完了")
     except Exception as e:
         print(f"DB初期化: {e}")
     yield

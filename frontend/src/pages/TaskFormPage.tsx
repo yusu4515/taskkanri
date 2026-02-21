@@ -9,14 +9,24 @@ import type { TaskCreate } from "../types";
 import { ESTIMATED_MINUTES_OPTIONS } from "../types";
 import { useCategories } from "../hooks/useCategories";
 
+const RECURRENCE_OPTIONS = [
+  { value: "", label: "なし" },
+  { value: "daily", label: "毎日" },
+  { value: "weekly", label: "毎週" },
+  { value: "monthly", label: "毎月" },
+];
+
 interface FormValues {
   title: string;
   due_date: string;
   importance: number;
   estimated_minutes: string;
+  actual_minutes: string;
   category: string;
   memo: string;
   depends_on_id: string;
+  parent_task_id: string;
+  recurrence: string;
 }
 
 export default function TaskFormPage() {
@@ -50,9 +60,12 @@ export default function TaskFormPage() {
       due_date: format(new Date(), "yyyy-MM-dd"),
       importance: 3,
       estimated_minutes: "",
+      actual_minutes: "",
       category: "",
       memo: "",
       depends_on_id: "",
+      parent_task_id: "",
+      recurrence: "",
     },
   });
 
@@ -63,9 +76,12 @@ export default function TaskFormPage() {
         due_date: format(new Date(existingTask.due_date), "yyyy-MM-dd"),
         importance: existingTask.importance,
         estimated_minutes: existingTask.estimated_minutes?.toString() ?? "",
+        actual_minutes: existingTask.actual_minutes?.toString() ?? "",
         category: existingTask.category ?? "",
         memo: existingTask.memo ?? "",
         depends_on_id: existingTask.depends_on_id?.toString() ?? "",
+        parent_task_id: existingTask.parent_task_id?.toString() ?? "",
+        recurrence: existingTask.recurrence ?? "",
       });
     }
   }, [existingTask, reset]);
@@ -114,9 +130,12 @@ export default function TaskFormPage() {
       due_date: new Date(values.due_date).toISOString(),
       importance: Number(values.importance),
       estimated_minutes: values.estimated_minutes ? Number(values.estimated_minutes) : null,
+      actual_minutes: values.actual_minutes ? Number(values.actual_minutes) : null,
       category: values.category || null,
       memo: values.memo || null,
       depends_on_id: values.depends_on_id ? Number(values.depends_on_id) : null,
+      parent_task_id: values.parent_task_id ? Number(values.parent_task_id) : null,
+      recurrence: values.recurrence || null,
     };
 
     if (isEdit) {
@@ -137,6 +156,10 @@ export default function TaskFormPage() {
 
   const availableDeps = taskList?.tasks.filter(
     (t) => t.status !== "completed" && t.status !== "deleted" && t.id !== Number(id)
+  ) ?? [];
+
+  const availableParents = taskList?.tasks.filter(
+    (t) => t.status !== "completed" && t.status !== "deleted" && t.id !== Number(id) && !t.parent_task_id
   ) ?? [];
 
   return (
@@ -207,19 +230,52 @@ export default function TaskFormPage() {
           </div>
         </div>
 
-        {/* 所要時間 */}
+        {/* 繰り返し */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            所要時間（見込み）
+            繰り返し
           </label>
-          <select {...register("estimated_minutes")} className="input">
-            <option value="">未設定</option>
-            {ESTIMATED_MINUTES_OPTIONS.map((o) => (
+          <select {...register("recurrence")} className="input">
+            {RECURRENCE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-400 mt-1">
+            設定すると完了時に次の期日でタスクが自動生成されます
+          </p>
+        </div>
+
+        {/* 所要時間 */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              所要時間（見込み）
+            </label>
+            <select {...register("estimated_minutes")} className="input">
+              <option value="">未設定</option>
+              {ESTIMATED_MINUTES_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {isEdit && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                実績時間（分）
+              </label>
+              <input
+                {...register("actual_minutes")}
+                type="number"
+                min={1}
+                className="input"
+                placeholder="例：45"
+              />
+            </div>
+          )}
         </div>
 
         {/* カテゴリ */}
@@ -245,7 +301,6 @@ export default function TaskFormPage() {
             ))}
           </select>
 
-          {/* カテゴリ管理パネル */}
           {showCategoryManager && (
             <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
               <p className="text-xs text-gray-500 font-medium">カテゴリ一覧</p>
@@ -288,6 +343,23 @@ export default function TaskFormPage() {
             </div>
           )}
         </div>
+
+        {/* 親タスク（サブタスク設定） */}
+        {availableParents.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              親タスク（サブタスクとして登録）
+            </label>
+            <select {...register("parent_task_id")} className="input">
+              <option value="">なし（トップレベル）</option>
+              {availableParents.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* 依存タスク */}
         {availableDeps.length > 0 && (

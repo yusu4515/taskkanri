@@ -1,14 +1,16 @@
-from datetime import datetime, timezone
+import calendar
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.task import Task, TaskCategory, TaskStatus
+from app.models.task import Task, TaskStatus
 from app.models.user import User
 from app.routers.deps import get_current_user
 from app.schemas.task import (
+    ReorderRequest,
     ScoreBreakdown,
     TaskCreate,
     TaskListResponse,
@@ -21,8 +23,21 @@ from app.services.priority import calculate_priority_score, get_priority_level
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
+def _next_due(due_date: datetime, recurrence: str) -> datetime:
+    """繰り返し種別に応じて次の期日を計算する"""
+    if recurrence == "daily":
+        return due_date + timedelta(days=1)
+    if recurrence == "weekly":
+        return due_date + timedelta(weeks=1)
+    if recurrence == "monthly":
+        year = due_date.year + (due_date.month // 12)
+        month = due_date.month % 12 + 1
+        day = min(due_date.day, calendar.monthrange(year, month)[1])
+        return due_date.replace(year=year, month=month, day=day)
+    return due_date
+
+
 def _build_task_response(task: Task, db: Session) -> TaskResponse:
-    """Task モデルを TaskResponse に変換し、スコア内訳を添付"""
     has_blocker = False
     if task.depends_on_id:
         blocker = db.query(Task).filter(Task.id == task.depends_on_id).first()
@@ -70,9 +85,18 @@ def create_task(
         if not dep:
             raise HTTPException(status_code=404, detail="依存タスクが見つかりません")
 
+    if payload.parent_task_id:
+        parent = db.query(Task).filter(
+            Task.id == payload.parent_task_id,
+            Task.user_id == current_user.id,
+            Task.status != TaskStatus.deleted,
+        ).first()
+        if not parent:
+            raise HTTPException(status_code=404, detail="親タスクが見つかりません")
+
     task = Task(user_id=current_user.id, **payload.model_dump())
     db.add(task)
-    db.flush()  # IDを取得するために先にflush
+    db.flush()
 
     task.priority_score = _recalc_score(task, db)
     db.commit()
@@ -83,8 +107,8 @@ def create_task(
 @router.get("", response_model=TaskListResponse)
 def list_tasks(
     status_filter: Optional[TaskStatus] = Query(None, alias="status"),
-    category: Optional[TaskCategory] = Query(None),
-    sort: str = Query("score", regex="^(score|due_date|importance|created_at)$"),
+    category: Optional[str] = Query(None),
+    sort: str = Query("score", regex="^(score|due_date|importance|created_at|manual)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -100,17 +124,18 @@ def list_tasks(
 
     tasks = q.all()
 
-    # スコア再計算（全タスク）
-    for t in tasks:
-        t.priority_score = _recalc_score(t, db)
-    db.commit()
+    # スコア再計算（manual 以外）
+    if sort != "manual":
+        for t in tasks:
+            t.priority_score = _recalc_score(t, db)
+        db.commit()
 
-    # ソート
     sort_key = {
         "score": lambda t: -t.priority_score,
         "due_date": lambda t: t.due_date,
         "importance": lambda t: -t.importance,
         "created_at": lambda t: -t.id,
+        "manual": lambda t: (t.manual_order if t.manual_order is not None else 9999),
     }[sort]
     tasks.sort(key=sort_key)
 
@@ -120,12 +145,27 @@ def list_tasks(
     )
 
 
+@router.post("/reorder", status_code=status.HTTP_200_OK)
+def reorder_tasks(
+    payload: ReorderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """手動並び順を保存する"""
+    for order, task_id in enumerate(payload.task_ids):
+        db.query(Task).filter(
+            Task.id == task_id,
+            Task.user_id == current_user.id,
+        ).update({"manual_order": order})
+    db.commit()
+    return {"message": "順序を保存しました"}
+
+
 @router.get("/today-focus", response_model=TodayFocusResponse)
 def get_today_focus(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """未完了タスクの中からスコア上位3件を Today Focus として返す"""
     tasks = (
         db.query(Task)
         .filter(
@@ -142,7 +182,6 @@ def get_today_focus(
     tasks.sort(key=lambda t: -t.priority_score)
     top3 = tasks[:3]
 
-    # Today Focus フラグを立てる
     db.query(Task).filter(Task.user_id == current_user.id).update({"today_focus": False})
     for t in top3:
         t.today_focus = True
@@ -159,7 +198,6 @@ def approve_today_focus(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Today Focus タスクを一括承認する"""
     db.query(Task).filter(
         Task.user_id == current_user.id,
         Task.today_focus == True,
@@ -202,7 +240,11 @@ def update_task(
     update_data = payload.model_dump(exclude_none=True)
 
     # 完了処理
-    if update_data.get("status") == TaskStatus.completed and task.status != TaskStatus.completed:
+    completing = (
+        update_data.get("status") == TaskStatus.completed
+        and task.status != TaskStatus.completed
+    )
+    if completing:
         update_data["completed_at"] = datetime.now(timezone.utc)
 
     for field, value in update_data.items():
@@ -211,6 +253,26 @@ def update_task(
     task.priority_score = _recalc_score(task, db)
     db.commit()
     db.refresh(task)
+
+    # 繰り返しタスク：完了時に次のタスクを自動生成
+    if completing and task.recurrence:
+        next_due = _next_due(task.due_date, task.recurrence)
+        new_task = Task(
+            user_id=current_user.id,
+            title=task.title,
+            due_date=next_due,
+            importance=task.importance,
+            estimated_minutes=task.estimated_minutes,
+            category=task.category,
+            memo=task.memo,
+            recurrence=task.recurrence,
+            parent_task_id=task.parent_task_id,
+        )
+        db.add(new_task)
+        db.flush()
+        new_task.priority_score = _recalc_score(new_task, db)
+        db.commit()
+
     return _build_task_response(task, db)
 
 
@@ -228,7 +290,6 @@ def delete_task(
     if not task:
         raise HTTPException(status_code=404, detail="タスクが見つかりません")
 
-    # 論理削除
     task.status = TaskStatus.deleted
     task.deleted_at = datetime.now(timezone.utc)
     db.commit()

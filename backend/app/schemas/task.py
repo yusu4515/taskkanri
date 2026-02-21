@@ -11,9 +11,12 @@ class TaskCreate(BaseModel):
     due_date: datetime
     importance: int = 3
     estimated_minutes: Optional[int] = None
+    actual_minutes: Optional[int] = None
     category: Optional[str] = None
     memo: Optional[str] = None
     depends_on_id: Optional[int] = None
+    parent_task_id: Optional[int] = None
+    recurrence: Optional[str] = None
 
     @field_validator("title")
     @classmethod
@@ -39,15 +42,26 @@ class TaskCreate(BaseModel):
             raise ValueError("所要時間は正の値を入力してください")
         return v
 
+    @field_validator("recurrence")
+    @classmethod
+    def validate_recurrence(cls, v: Optional[str]) -> Optional[str]:
+        if v and v not in ("daily", "weekly", "monthly"):
+            raise ValueError("繰り返しは daily/weekly/monthly のいずれかを指定してください")
+        return v
+
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     due_date: Optional[datetime] = None
     importance: Optional[int] = None
     estimated_minutes: Optional[int] = None
+    actual_minutes: Optional[int] = None
     category: Optional[str] = None
     memo: Optional[str] = None
     depends_on_id: Optional[int] = None
+    parent_task_id: Optional[int] = None
+    recurrence: Optional[str] = None
+    manual_order: Optional[int] = None
     status: Optional[TaskStatus] = None
 
 
@@ -65,9 +79,13 @@ class TaskResponse(BaseModel):
     due_date: datetime
     importance: int
     estimated_minutes: Optional[int]
+    actual_minutes: Optional[int] = None
     category: Optional[str]
     memo: Optional[str]
     depends_on_id: Optional[int]
+    parent_task_id: Optional[int] = None
+    recurrence: Optional[str] = None
+    manual_order: Optional[int] = None
     status: TaskStatus
     today_focus: bool
     today_focus_approved: bool
@@ -89,3 +107,7 @@ class TaskListResponse(BaseModel):
 class TodayFocusResponse(BaseModel):
     tasks: list[TaskResponse]
     date: str
+
+
+class ReorderRequest(BaseModel):
+    task_ids: list[int]

@@ -18,18 +18,18 @@ from app.core.database import Base
 
 
 class TaskStatus(str, enum.Enum):
-    pending = "pending"       # 未着手
-    in_progress = "in_progress"  # 進行中
-    completed = "completed"   # 完了
-    deleted = "deleted"       # 論理削除
+    pending = "pending"
+    in_progress = "in_progress"
+    completed = "completed"
+    deleted = "deleted"
 
 
 class TaskCategory(str, enum.Enum):
-    legal = "legal"           # 法務
-    accounting = "accounting" # 経理
-    general_affairs = "general_affairs"  # 総務
-    hr = "hr"                 # 人事
-    other = "other"           # その他
+    legal = "legal"
+    accounting = "accounting"
+    general_affairs = "general_affairs"
+    hr = "hr"
+    other = "other"
 
 
 class Task(Base):
@@ -41,18 +41,26 @@ class Task(Base):
     # 基本情報
     title = Column(String(100), nullable=False)
     due_date = Column(DateTime(timezone=True), nullable=False)
-    importance = Column(Integer, default=3, nullable=False)  # 1-5
-    estimated_minutes = Column(Integer, nullable=True)       # 見込み作業時間（分）
+    importance = Column(Integer, default=3, nullable=False)
+    estimated_minutes = Column(Integer, nullable=True)
+    actual_minutes = Column(Integer, nullable=True)       # 実績作業時間（分）
     category = Column(String(100), nullable=True)
     memo = Column(Text, nullable=True)
 
-    # 依存関係
+    # 繰り返し
+    recurrence = Column(String(20), nullable=True)        # daily / weekly / monthly
+
+    # 依存関係・階層
     depends_on_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+    parent_task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
 
     # ステータス
     status = Column(Enum(TaskStatus), default=TaskStatus.pending, nullable=False)
-    today_focus = Column(Boolean, default=False)             # Today Focus に選定済み
-    today_focus_approved = Column(Boolean, default=False)    # ユーザーが承認済み
+    today_focus = Column(Boolean, default=False)
+    today_focus_approved = Column(Boolean, default=False)
+
+    # 手動並び順
+    manual_order = Column(Integer, nullable=True)
 
     # 優先度スコア（キャッシュ）
     priority_score = Column(Float, default=0.0)
@@ -69,4 +77,9 @@ class Task(Base):
 
     # リレーション
     user = relationship("User", backref="tasks")
-    depends_on = relationship("Task", remote_side=[id], backref="blocking_tasks")
+    depends_on = relationship(
+        "Task", remote_side=[id], foreign_keys=[depends_on_id], backref="blocking_tasks"
+    )
+    parent = relationship(
+        "Task", remote_side=[id], foreign_keys=[parent_task_id], backref="subtasks"
+    )

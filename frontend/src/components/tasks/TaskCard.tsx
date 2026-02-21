@@ -17,8 +17,14 @@ export default function TaskCard({ task }: Props) {
   const isOverdue = isPast(dueDate) && task.status !== "completed";
   const isDueToday = isToday(dueDate);
   const isCompleted = task.status === "completed";
+  const isInProgress = task.status === "in_progress";
 
-  const handleToggle = async () => {
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+  };
+
+  const handleToggleComplete = async () => {
     try {
       if (isCompleted) {
         await tasksApi.uncomplete(task.id);
@@ -27,22 +33,38 @@ export default function TaskCard({ task }: Props) {
         await tasksApi.complete(task.id);
         toast.success("完了しました！");
       }
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      invalidate();
     } catch {
       toast.error("操作に失敗しました");
     }
   };
 
+  const handleToggleInProgress = async () => {
+    try {
+      if (isInProgress) {
+        await tasksApi.uncomplete(task.id);
+        toast.success("未着手に戻しました");
+      } else {
+        await tasksApi.start(task.id);
+        toast.success("着手しました");
+      }
+      invalidate();
+    } catch {
+      toast.error("操作に失敗しました");
+    }
+  };
+
+  const borderClass = task.today_focus_approved
+    ? "border-l-4 border-l-blue-500"
+    : isInProgress
+    ? "border-l-4 border-l-orange-400"
+    : "";
+
   return (
-    <div
-      className={`card flex items-start gap-3 hover:shadow-md transition-shadow ${
-        task.today_focus_approved ? "border-l-4 border-l-blue-500" : ""
-      }`}
-    >
+    <div className={`card flex items-start gap-3 hover:shadow-md transition-shadow ${borderClass}`}>
       {/* 完了チェックボックス */}
       <button
-        onClick={handleToggle}
+        onClick={handleToggleComplete}
         className="flex flex-col items-center gap-0.5 flex-shrink-0 mt-0.5 group"
         aria-label={isCompleted ? "完了を取り消す" : "完了にする"}
         title={isCompleted ? "クリックで未着手に戻す" : "クリックで完了にする"}
@@ -82,7 +104,7 @@ export default function TaskCard({ task }: Props) {
           <PriorityBadge score={task.priority_score} breakdown={task.score_breakdown} />
         </div>
 
-        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">
           <span
             className={`${
               isOverdue
@@ -112,10 +134,59 @@ export default function TaskCard({ task }: Props) {
             </span>
           )}
 
+          {task.actual_minutes && (
+            <span
+              className={
+                task.estimated_minutes && task.actual_minutes > task.estimated_minutes
+                  ? "text-red-500"
+                  : "text-green-600"
+              }
+            >
+              実績 {task.actual_minutes}分
+            </span>
+          )}
+
+          {task.recurrence && (
+            <span className="text-blue-400">
+              🔁{" "}
+              {task.recurrence === "daily"
+                ? "毎日"
+                : task.recurrence === "weekly"
+                ? "毎週"
+                : "毎月"}
+            </span>
+          )}
+
           <span className="ml-auto flex items-center gap-1">
             重要度{"★".repeat(task.importance)}{"☆".repeat(5 - task.importance)}
           </span>
         </div>
+
+        {/* 進行中ボタン */}
+        {!isCompleted && (
+          <div className="mt-2">
+            {isInProgress ? (
+              <span className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+                ▶ 進行中
+                <button
+                  onClick={handleToggleInProgress}
+                  className="ml-1 text-orange-400 hover:text-orange-600 leading-none"
+                  title="未着手に戻す"
+                >
+                  ×
+                </button>
+              </span>
+            ) : (
+              <button
+                onClick={handleToggleInProgress}
+                className="text-xs text-gray-400 hover:text-orange-500 transition-colors"
+                title="着手する"
+              >
+                ▶ 着手
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

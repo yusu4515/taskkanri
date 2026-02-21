@@ -15,9 +15,13 @@ export interface Task {
   due_date: string;
   importance: number;
   estimated_minutes: number | null;
+  actual_minutes: number | null;
   category: string | null;
   memo: string | null;
   depends_on_id: number | null;
+  parent_task_id: number | null;
+  recurrence: string | null;
+  manual_order: number | null;
   status: TaskStatus;
   today_focus: boolean;
   today_focus_approved: boolean;
@@ -33,9 +37,12 @@ export interface TaskCreate {
   due_date: string;
   importance?: number;
   estimated_minutes?: number | null;
+  actual_minutes?: number | null;
   category?: string | null;
   memo?: string | null;
   depends_on_id?: number | null;
+  parent_task_id?: number | null;
+  recurrence?: string | null;
 }
 
 export interface TaskUpdate {
@@ -43,9 +50,13 @@ export interface TaskUpdate {
   due_date?: string;
   importance?: number;
   estimated_minutes?: number | null;
+  actual_minutes?: number | null;
   category?: string | null;
   memo?: string | null;
   depends_on_id?: number | null;
+  parent_task_id?: number | null;
+  recurrence?: string | null;
+  manual_order?: number | null;
   status?: TaskStatus;
 }
 
