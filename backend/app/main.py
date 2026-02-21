@@ -13,6 +13,7 @@ async def lifespan(app: FastAPI):
     # DB接続が取れる場合のみテーブル作成（接続失敗でも起動を止めない）
     try:
         Base.metadata.create_all(bind=engine)
+        print("DB: テーブル作成完了")
     except Exception as e:
         print(f"DB接続スキップ: {e}")
     yield
