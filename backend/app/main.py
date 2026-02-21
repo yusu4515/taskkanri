@@ -14,8 +14,17 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
         print("DB: テーブル作成完了")
+        # category カラムを Enum → VARCHAR(100) に移行
+        with engine.connect() as conn:
+            conn.execute(
+                __import__("sqlalchemy").text(
+                    "ALTER TABLE tasks ALTER COLUMN category TYPE VARCHAR(100)"
+                )
+            )
+            conn.commit()
+            print("DB: category カラム型変更完了")
     except Exception as e:
-        print(f"DB接続スキップ: {e}")
+        print(f"DB初期化: {e}")
     yield
 
 
