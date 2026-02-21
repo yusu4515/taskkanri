@@ -1,19 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { tasksApi } from "../api/tasks";
-import type { TaskCreate, TaskCategory } from "../types";
-import { CATEGORY_LABELS, ESTIMATED_MINUTES_OPTIONS } from "../types";
+import type { TaskCreate } from "../types";
+import { ESTIMATED_MINUTES_OPTIONS } from "../types";
+import { useCategories } from "../hooks/useCategories";
 
 interface FormValues {
   title: string;
   due_date: string;
   importance: number;
   estimated_minutes: string;
-  category: TaskCategory | "";
+  category: string;
   memo: string;
   depends_on_id: string;
 }
@@ -23,6 +24,9 @@ export default function TaskFormPage() {
   const isEdit = !!id;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { categories, addCategory, removeCategory } = useCategories();
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
 
   const { data: existingTask } = useQuery({
     queryKey: ["task", id],
@@ -52,7 +56,6 @@ export default function TaskFormPage() {
     },
   });
 
-  // 編集時: フォームに既存データをセット
   useEffect(() => {
     if (existingTask) {
       reset({
@@ -111,7 +114,7 @@ export default function TaskFormPage() {
       due_date: new Date(values.due_date).toISOString(),
       importance: Number(values.importance),
       estimated_minutes: values.estimated_minutes ? Number(values.estimated_minutes) : null,
-      category: (values.category as TaskCategory) || null,
+      category: values.category || null,
       memo: values.memo || null,
       depends_on_id: values.depends_on_id ? Number(values.depends_on_id) : null,
     };
@@ -120,6 +123,13 @@ export default function TaskFormPage() {
       updateMutation.mutate(payload);
     } else {
       createMutation.mutate(payload);
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryInput.trim()) {
+      addCategory(newCategoryInput);
+      setNewCategoryInput("");
     }
   };
 
@@ -214,17 +224,69 @@ export default function TaskFormPage() {
 
         {/* カテゴリ */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            カテゴリ
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">
+              カテゴリ
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowCategoryManager(!showCategoryManager)}
+              className="text-xs text-blue-500 hover:text-blue-700"
+            >
+              {showCategoryManager ? "▲ 閉じる" : "▼ カテゴリを管理"}
+            </button>
+          </div>
           <select {...register("category")} className="input">
             <option value="">未設定</option>
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
               </option>
             ))}
           </select>
+
+          {/* カテゴリ管理パネル */}
+          {showCategoryManager && (
+            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+              <p className="text-xs text-gray-500 font-medium">カテゴリ一覧</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <span
+                    key={cat}
+                    className="flex items-center gap-1 bg-white border border-gray-200 rounded-full px-3 py-1 text-xs"
+                  >
+                    {cat}
+                    <button
+                      type="button"
+                      onClick={() => removeCategory(cat)}
+                      className="text-gray-400 hover:text-red-500 ml-1 leading-none"
+                      title="削除"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCategoryInput}
+                  onChange={(e) => setNewCategoryInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddCategory(); } }}
+                  placeholder="新しいカテゴリ名"
+                  className="input text-sm py-1 flex-1"
+                  maxLength={30}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+                >
+                  追加
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 依存タスク */}

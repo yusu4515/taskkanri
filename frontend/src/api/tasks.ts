@@ -26,6 +26,9 @@ export const tasksApi = {
   complete: (id: number) =>
     api.patch<Task>(`/tasks/${id}`, { status: "completed" }).then((r) => r.data),
 
+  uncomplete: (id: number) =>
+    api.patch<Task>(`/tasks/${id}`, { status: "pending" }).then((r) => r.data),
+
   getTodayFocus: () =>
     api.get<TodayFocusResponse>("/tasks/today-focus").then((r) => r.data),
 

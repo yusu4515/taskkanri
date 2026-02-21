@@ -43,7 +43,7 @@ class Task(Base):
     due_date = Column(DateTime(timezone=True), nullable=False)
     importance = Column(Integer, default=3, nullable=False)  # 1-5
     estimated_minutes = Column(Integer, nullable=True)       # 見込み作業時間（分）
-    category = Column(Enum(TaskCategory), nullable=True)
+    category = Column(String(100), nullable=True)
     memo = Column(Text, nullable=True)
 
     # 依存関係

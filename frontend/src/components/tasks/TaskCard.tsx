@@ -2,7 +2,6 @@ import { format, isPast, isToday } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import type { Task } from "../../types";
-import { CATEGORY_LABELS } from "../../types";
 import PriorityBadge from "./PriorityBadge";
 import { tasksApi } from "../../api/tasks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,13 +16,19 @@ export default function TaskCard({ task }: Props) {
   const dueDate = new Date(task.due_date);
   const isOverdue = isPast(dueDate) && task.status !== "completed";
   const isDueToday = isToday(dueDate);
+  const isCompleted = task.status === "completed";
 
-  const handleComplete = async () => {
+  const handleToggle = async () => {
     try {
-      await tasksApi.complete(task.id);
+      if (isCompleted) {
+        await tasksApi.uncomplete(task.id);
+        toast.success("未着手に戻しました");
+      } else {
+        await tasksApi.complete(task.id);
+        toast.success("完了しました！");
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("完了しました！");
     } catch {
       toast.error("操作に失敗しました");
     }
@@ -37,20 +42,27 @@ export default function TaskCard({ task }: Props) {
     >
       {/* 完了チェックボックス */}
       <button
-        onClick={handleComplete}
-        disabled={task.status === "completed"}
-        className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 transition-colors ${
-          task.status === "completed"
-            ? "bg-green-500 border-green-500"
-            : "border-gray-300 hover:border-blue-500"
-        }`}
-        aria-label="完了にする"
+        onClick={handleToggle}
+        className="flex flex-col items-center gap-0.5 flex-shrink-0 mt-0.5 group"
+        aria-label={isCompleted ? "完了を取り消す" : "完了にする"}
+        title={isCompleted ? "クリックで未着手に戻す" : "クリックで完了にする"}
       >
-        {task.status === "completed" && (
-          <svg className="w-full h-full text-white p-0.5" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M10 3L5 8.5 2 5.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          </svg>
-        )}
+        <span
+          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+            isCompleted
+              ? "bg-green-500 border-green-500"
+              : "border-gray-300 group-hover:border-blue-500"
+          }`}
+        >
+          {isCompleted && (
+            <svg className="w-full h-full text-white p-0.5" viewBox="0 0 12 12" fill="currentColor">
+              <path d="M10 3L5 8.5 2 5.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            </svg>
+          )}
+        </span>
+        <span className={`text-[10px] leading-none ${isCompleted ? "text-green-500" : "text-gray-400 group-hover:text-blue-500"}`}>
+          完了
+        </span>
       </button>
 
       {/* コンテンツ */}
@@ -59,7 +71,7 @@ export default function TaskCard({ task }: Props) {
           <Link
             to={`/tasks/${task.id}/edit`}
             className={`font-medium text-sm leading-5 hover:text-blue-600 transition-colors ${
-              task.status === "completed" ? "line-through text-gray-400" : "text-gray-800"
+              isCompleted ? "line-through text-gray-400" : "text-gray-800"
             }`}
           >
             {task.title}
@@ -86,7 +98,7 @@ export default function TaskCard({ task }: Props) {
 
           {task.category && (
             <span className="bg-gray-100 px-2 py-0.5 rounded-full">
-              {CATEGORY_LABELS[task.category]}
+              {task.category}
             </span>
           )}
 

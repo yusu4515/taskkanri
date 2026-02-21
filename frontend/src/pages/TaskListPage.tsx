@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { tasksApi } from "../api/tasks";
 import TaskCard from "../components/tasks/TaskCard";
-import type { TaskCategory, TaskStatus } from "../types";
-import { CATEGORY_LABELS } from "../types";
+import type { TaskStatus } from "../types";
+import { useCategories } from "../hooks/useCategories";
 
 type SortKey = "score" | "due_date" | "importance" | "created_at";
 
@@ -24,8 +24,9 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 
 export default function TaskListPage() {
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "">("");
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "">("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState<SortKey>("score");
+  const { categories } = useCategories();
 
   const { data, isLoading } = useQuery({
     queryKey: ["tasks", statusFilter, categoryFilter, sort],
@@ -72,13 +73,13 @@ export default function TaskListPage() {
           <label className="block text-xs font-medium text-gray-500 mb-1">カテゴリ</label>
           <select
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as TaskCategory | "")}
+            onChange={(e) => setCategoryFilter(e.target.value)}
             className="input py-1.5 text-sm w-32"
           >
             <option value="">すべて</option>
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
               </option>
             ))}
           </select>

@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
-from app.models.task import TaskCategory, TaskStatus
+from app.models.task import TaskStatus
 
 
 class TaskCreate(BaseModel):
@@ -11,7 +11,7 @@ class TaskCreate(BaseModel):
     due_date: datetime
     importance: int = 3
     estimated_minutes: Optional[int] = None
-    category: Optional[TaskCategory] = None
+    category: Optional[str] = None
     memo: Optional[str] = None
     depends_on_id: Optional[int] = None
 
@@ -45,7 +45,7 @@ class TaskUpdate(BaseModel):
     due_date: Optional[datetime] = None
     importance: Optional[int] = None
     estimated_minutes: Optional[int] = None
-    category: Optional[TaskCategory] = None
+    category: Optional[str] = None
     memo: Optional[str] = None
     depends_on_id: Optional[int] = None
     status: Optional[TaskStatus] = None
@@ -65,7 +65,7 @@ class TaskResponse(BaseModel):
     due_date: datetime
     importance: int
     estimated_minutes: Optional[int]
-    category: Optional[TaskCategory]
+    category: Optional[str]
     memo: Optional[str]
     depends_on_id: Optional[int]
     status: TaskStatus

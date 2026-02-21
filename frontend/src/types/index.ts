@@ -1,10 +1,4 @@
 export type TaskStatus = "pending" | "in_progress" | "completed" | "deleted";
-export type TaskCategory =
-  | "legal"
-  | "accounting"
-  | "general_affairs"
-  | "hr"
-  | "other";
 export type PriorityLevel = "red" | "yellow" | "green";
 
 export interface ScoreBreakdown {
@@ -21,7 +15,7 @@ export interface Task {
   due_date: string;
   importance: number;
   estimated_minutes: number | null;
-  category: TaskCategory | null;
+  category: string | null;
   memo: string | null;
   depends_on_id: number | null;
   status: TaskStatus;
@@ -39,7 +33,7 @@ export interface TaskCreate {
   due_date: string;
   importance?: number;
   estimated_minutes?: number | null;
-  category?: TaskCategory | null;
+  category?: string | null;
   memo?: string | null;
   depends_on_id?: number | null;
 }
@@ -49,7 +43,7 @@ export interface TaskUpdate {
   due_date?: string;
   importance?: number;
   estimated_minutes?: number | null;
-  category?: TaskCategory | null;
+  category?: string | null;
   memo?: string | null;
   depends_on_id?: number | null;
   status?: TaskStatus;
@@ -89,14 +83,6 @@ export interface DashboardSummary {
   category_distribution: { category: string; count: number }[];
   weekly_completed: { date: string; count: number }[];
 }
-
-export const CATEGORY_LABELS: Record<TaskCategory | "other", string> = {
-  legal: "法務",
-  accounting: "経理",
-  general_affairs: "総務",
-  hr: "人事",
-  other: "その他",
-};
 
 export const ESTIMATED_MINUTES_OPTIONS = [
   { value: 15, label: "15分" },
