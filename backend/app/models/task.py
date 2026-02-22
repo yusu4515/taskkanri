@@ -83,3 +83,4 @@ class Task(Base):
     parent = relationship(
         "Task", remote_side=[id], foreign_keys=[parent_task_id], backref="subtasks"
     )
+# NOTE: tags column added via migration in main.py

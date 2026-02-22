@@ -22,6 +22,7 @@ export interface Task {
   parent_task_id: number | null;
   recurrence: string | null;
   manual_order: number | null;
+  tags: string | null;
   status: TaskStatus;
   today_focus: boolean;
   today_focus_approved: boolean;
@@ -43,6 +44,7 @@ export interface TaskCreate {
   depends_on_id?: number | null;
   parent_task_id?: number | null;
   recurrence?: string | null;
+  tags?: string | null;
 }
 
 export interface TaskUpdate {
@@ -58,6 +60,7 @@ export interface TaskUpdate {
   recurrence?: string | null;
   manual_order?: number | null;
   status?: TaskStatus;
+  tags?: string | null;
 }
 
 export interface TodayFocusResponse {
@@ -105,6 +108,29 @@ export interface TaskTemplate {
   category: string;
   recurrence: string;
   memo: string;
+}
+
+export interface KeyResult {
+  id: number;
+  objective_id: number;
+  title: string;
+  target_value: number;
+  current_value: number;
+  unit: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Objective {
+  id: number;
+  user_id: number;
+  title: string;
+  description: string | null;
+  quarter: string;
+  color: string;
+  key_results: KeyResult[];
+  created_at: string;
+  updated_at: string;
 }
 
 export const ESTIMATED_MINUTES_OPTIONS = [

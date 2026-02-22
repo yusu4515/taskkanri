@@ -5,15 +5,20 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import TaskListPage from "./pages/TaskListPage";
 import TaskFormPage from "./pages/TaskFormPage";
+import TaskDetailPage from "./pages/TaskDetailPage";
 import CalendarPage from "./pages/CalendarPage";
 import WeeklyReviewPage from "./pages/WeeklyReviewPage";
+import GanttPage from "./pages/GanttPage";
+import OKRPage from "./pages/OKRPage";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import Layout from "./components/layout/Layout";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -39,10 +44,15 @@ export default function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="tasks" element={<TaskListPage />} />
           <Route path="tasks/new" element={<TaskFormPage />} />
+          <Route path="tasks/:id" element={<TaskDetailPage />} />
           <Route path="tasks/:id/edit" element={<TaskFormPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="weekly-review" element={<WeeklyReviewPage />} />
+          <Route path="gantt" element={<GanttPage />} />
+          <Route path="okr" element={<OKRPage />} />
+          <Route path="account" element={<AccountSettingsPage />} />
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

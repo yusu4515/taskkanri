@@ -1,0 +1,16 @@
+{
+  "name": "タスカン",
+  "short_name": "タスカン",
+  "description": "業務タスクの優先順位を自動計算する管理ツール",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

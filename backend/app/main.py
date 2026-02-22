@@ -5,22 +5,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import Base, engine
+from app.models import okr as _okr_models  # noqa: ensure OKR tables are registered
 from app.routers import auth, dashboard, tasks, users
+from app.routers import okr
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # DB接続が取れる場合のみテーブル作成（接続失敗でも起動を止めない）
     try:
         Base.metadata.create_all(bind=engine)
         print("DB: テーブル作成完了")
-        # スキーママイグレーション（冪等）
         migrations = [
             "ALTER TABLE tasks ALTER COLUMN category TYPE VARCHAR(100)",
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS actual_minutes INTEGER",
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence VARCHAR(20)",
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS parent_task_id INTEGER REFERENCES tasks(id)",
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS manual_order INTEGER",
+            "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tags VARCHAR(500)",
         ]
         with engine.connect() as conn:
             for sql in migrations:
@@ -36,7 +37,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="TaskKanri API",
+    title="タスカン API",
     description="業務タスク管理ツール - 誰でも自然とタスクの優先順位をつけられるツール",
     version="1.0.0",
     lifespan=lifespan,
@@ -60,6 +61,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tasks.router)
 app.include_router(dashboard.router)
+app.include_router(okr.router)
 
 
 @app.get("/health")

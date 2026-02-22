@@ -17,6 +17,7 @@ class TaskCreate(BaseModel):
     depends_on_id: Optional[int] = None
     parent_task_id: Optional[int] = None
     recurrence: Optional[str] = None
+    tags: Optional[str] = None  # comma-separated e.g. "urgent,review"
 
     @field_validator("title")
     @classmethod
@@ -63,6 +64,7 @@ class TaskUpdate(BaseModel):
     recurrence: Optional[str] = None
     manual_order: Optional[int] = None
     status: Optional[TaskStatus] = None
+    tags: Optional[str] = None
 
 
 class ScoreBreakdown(BaseModel):
@@ -86,6 +88,7 @@ class TaskResponse(BaseModel):
     parent_task_id: Optional[int] = None
     recurrence: Optional[str] = None
     manual_order: Optional[int] = None
+    tags: Optional[str] = None
     status: TaskStatus
     today_focus: bool
     today_focus_approved: bool

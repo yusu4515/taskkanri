@@ -56,3 +56,19 @@ class TokenResponse(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("パスワードは8文字以上で入力してください")
+        if not re.search(r"[a-zA-Z]", v):
+            raise ValueError("パスワードには英字を1文字以上含めてください")
+        if not re.search(r"\d", v):
+            raise ValueError("パスワードには数字を1文字以上含めてください")
+        return v
