@@ -8,6 +8,7 @@ from app.core.database import Base, engine
 from app.models import okr as _okr_models  # noqa: ensure OKR tables are registered
 from app.routers import auth, dashboard, tasks, users
 from app.routers import okr
+from app.routers import ai as ai_router
 
 
 @asynccontextmanager
@@ -22,6 +23,8 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS parent_task_id INTEGER REFERENCES tasks(id)",
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS manual_order INTEGER",
             "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tags VARCHAR(500)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_provider VARCHAR(20)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_api_key VARCHAR(500)",
         ]
         with engine.connect() as conn:
             for sql in migrations:
@@ -62,6 +65,7 @@ app.include_router(users.router)
 app.include_router(tasks.router)
 app.include_router(dashboard.router)
 app.include_router(okr.router)
+app.include_router(ai_router.router)
 
 
 @app.get("/health")

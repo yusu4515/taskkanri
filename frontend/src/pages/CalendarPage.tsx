@@ -17,21 +17,20 @@ import { tasksApi } from "../api/tasks";
 import type { Task } from "../types";
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-blue-100 text-blue-700",
-  in_progress: "bg-orange-100 text-orange-700",
-  completed: "bg-green-100 text-green-600 line-through",
+  pending: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+  in_progress: "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
+  completed: "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 line-through",
 };
 
 function CalendarCell({ date, tasks }: { date: Date; tasks: Task[] }) {
-  const isCurrentMonth = isSameMonth(date, date); // always true, handled by caller
   const isOverdue = isPast(date) && !isToday(date);
   const pending = tasks.filter((t) => t.status !== "completed");
   const completed = tasks.filter((t) => t.status === "completed");
 
   return (
     <div
-      className={`min-h-[90px] p-1 border-b border-r border-gray-100 ${
-        isToday(date) ? "bg-blue-50" : ""
+      className={`min-h-[90px] p-1 border-b border-r border-gray-100 dark:border-gray-700/50 ${
+        isToday(date) ? "bg-blue-50 dark:bg-blue-900/20" : ""
       }`}
     >
       <span
@@ -39,8 +38,8 @@ function CalendarCell({ date, tasks }: { date: Date; tasks: Task[] }) {
           isToday(date)
             ? "bg-blue-500 text-white"
             : isOverdue && pending.length > 0
-            ? "text-red-500"
-            : "text-gray-600"
+            ? "text-red-500 dark:text-red-400"
+            : "text-gray-600 dark:text-gray-400"
         }`}
       >
         {format(date, "d")}
@@ -49,7 +48,7 @@ function CalendarCell({ date, tasks }: { date: Date; tasks: Task[] }) {
         {pending.slice(0, 3).map((t) => (
           <Link
             key={t.id}
-            to={`/tasks/${t.id}/edit`}
+            to={`/tasks/${t.id}`}
             className={`block truncate text-[10px] px-1 rounded ${
               STATUS_COLOR[t.status] ?? "bg-gray-100 text-gray-600"
             }`}
@@ -61,15 +60,15 @@ function CalendarCell({ date, tasks }: { date: Date; tasks: Task[] }) {
         {completed.slice(0, 1).map((t) => (
           <Link
             key={t.id}
-            to={`/tasks/${t.id}/edit`}
-            className="block truncate text-[10px] px-1 rounded bg-green-50 text-green-500 line-through"
+            to={`/tasks/${t.id}`}
+            className="block truncate text-[10px] px-1 rounded bg-green-50 dark:bg-green-900/40 text-green-500 dark:text-green-400 line-through"
             title={t.title}
           >
             {t.title}
           </Link>
         ))}
         {tasks.length > 4 && (
-          <span className="text-[10px] text-gray-400 pl-1">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 pl-1">
             +{tasks.length - 4}件
           </span>
         )}
@@ -113,7 +112,7 @@ export default function CalendarPage() {
     <div className="p-6 max-w-5xl mx-auto">
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">カレンダー</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">カレンダー</h2>
         <Link to="/tasks/new" className="btn-primary text-sm">
           + タスクを追加
         </Link>
@@ -124,28 +123,28 @@ export default function CalendarPage() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={prevMonth}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
           >
             ‹ 前月
           </button>
-          <h3 className="text-lg font-bold text-gray-800">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
             {format(currentMonth, "yyyy年M月", { locale: ja })}
           </h3>
           <button
             onClick={nextMonth}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
           >
             翌月 ›
           </button>
         </div>
 
         {/* 曜日ヘッダー */}
-        <div className="grid grid-cols-7 border-t border-l border-gray-100">
+        <div className="grid grid-cols-7 border-t border-l border-gray-100 dark:border-gray-700/50">
           {DOW.map((d, i) => (
             <div
               key={d}
-              className={`text-center text-xs font-semibold py-2 border-b border-r border-gray-100 ${
-                i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-gray-500"
+              className={`text-center text-xs font-semibold py-2 border-b border-r border-gray-100 dark:border-gray-700/50 ${
+                i === 0 ? "text-red-500 dark:text-red-400" : i === 6 ? "text-blue-500 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"
               }`}
             >
               {d}
@@ -157,7 +156,7 @@ export default function CalendarPage() {
             ? Array.from({ length: 35 }).map((_, i) => (
                 <div
                   key={i}
-                  className="min-h-[90px] border-b border-r border-gray-100 animate-pulse bg-gray-50"
+                  className="min-h-[90px] border-b border-r border-gray-100 dark:border-gray-700/50 animate-pulse bg-gray-50 dark:bg-gray-800"
                 />
               ))
             : days.map((day) => {
@@ -176,7 +175,7 @@ export default function CalendarPage() {
         </div>
 
         {/* 凡例 */}
-        <div className="flex gap-4 mt-3 text-xs text-gray-500">
+        <div className="flex gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-blue-100" /> 未着手
           </span>

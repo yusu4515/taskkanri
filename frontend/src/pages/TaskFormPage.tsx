@@ -5,10 +5,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { tasksApi } from "../api/tasks";
-import type { TaskCreate } from "../types";
+import { aiApi } from "../api/ai";
+import type { TaskCreate, AiSubTask } from "../types";
 import { ESTIMATED_MINUTES_OPTIONS } from "../types";
 import { useCategories } from "../hooks/useCategories";
 import { useTemplates } from "../hooks/useTemplates";
+import { useAiStatus } from "../hooks/useAiStatus";
 
 const RECURRENCE_OPTIONS = [
   { value: "", label: "なし" },
@@ -37,6 +39,7 @@ export default function TaskFormPage() {
   const queryClient = useQueryClient();
   const { categories, addCategory, removeCategory } = useCategories();
   const { templates, addTemplate, removeTemplate } = useTemplates();
+  const { hasKey } = useAiStatus();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
@@ -46,6 +49,11 @@ export default function TaskFormPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const tagInputRef = useRef<HTMLInputElement>(null);
+
+  // AI state
+  const [suggesting, setSuggesting] = useState(false);
+  const [decomposing, setDecomposing] = useState(false);
+  const [aiSubtasks, setAiSubtasks] = useState<AiSubTask[]>([]);
 
   const { data: existingTask } = useQuery({
     queryKey: ["task", id],
@@ -63,6 +71,7 @@ export default function TaskFormPage() {
     handleSubmit,
     reset,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -99,6 +108,56 @@ export default function TaskFormPage() {
     }
   }, [existingTask, reset]);
 
+  const handleAiSuggest = async () => {
+    const title = getValues("title").trim();
+    if (!title) {
+      toast.error("タイトルを入力してからAI補完を実行してください");
+      return;
+    }
+    setSuggesting(true);
+    try {
+      const result = await aiApi.suggest(title);
+      if (result.due_date) setValue("due_date", result.due_date);
+      if (result.importance) setValue("importance", result.importance);
+      if (result.estimated_minutes) {
+        // Find the closest option value
+        const opts = ESTIMATED_MINUTES_OPTIONS.map((o) => Number(o.value));
+        const closest = opts.reduce((a, b) =>
+          Math.abs(b - result.estimated_minutes!) < Math.abs(a - result.estimated_minutes!) ? b : a
+        );
+        setValue("estimated_minutes", closest.toString());
+      }
+      if (result.category) setValue("category", result.category);
+      if (result.memo) setValue("memo", result.memo);
+      toast.success("AI補完が完了しました");
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : "AI補完に失敗しました");
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const handleAiDecompose = async () => {
+    const title = getValues("title").trim();
+    const memo = getValues("memo");
+    if (!title) {
+      toast.error("タイトルを入力してからサブタスク分解を実行してください");
+      return;
+    }
+    setDecomposing(true);
+    try {
+      const result = await aiApi.decompose(title, memo || undefined);
+      setAiSubtasks(result.subtasks);
+      toast.success(`${result.subtasks.length}個のサブタスクを生成しました`);
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      toast.error(typeof detail === "string" ? detail : "サブタスク分解に失敗しました");
+    } finally {
+      setDecomposing(false);
+    }
+  };
+
   const handleAddTag = () => {
     const val = tagInput.trim().replace(/^#/, "");
     if (val && !tags.includes(val)) {
@@ -118,10 +177,35 @@ export default function TaskFormPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: TaskCreate) => tasksApi.create(data),
-    onSuccess: () => {
+    onSuccess: async (created) => {
+      // If AI subtasks were generated, create them linked to the new parent
+      if (aiSubtasks.length > 0) {
+        const base: Partial<TaskCreate> = {
+          due_date: created.due_date,
+          importance: created.importance,
+          parent_task_id: created.id,
+        };
+        await Promise.all(
+          aiSubtasks.map((s) =>
+            tasksApi.create({
+              ...base,
+              title: s.title,
+              estimated_minutes: s.estimated_minutes ?? null,
+              memo: s.memo ?? null,
+              category: created.category,
+              tags: null,
+              recurrence: null,
+              depends_on_id: null,
+              actual_minutes: null,
+            } as TaskCreate)
+          )
+        );
+        toast.success(`タスクと${aiSubtasks.length}個のサブタスクを登録しました`);
+      } else {
+        toast.success("タスクを登録しました");
+      }
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("タスクを登録しました");
       navigate("/tasks");
     },
     onError: (err: any) => {
@@ -270,7 +354,19 @@ export default function TaskFormPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="card space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">タイトル <span className="text-red-500">*</span></label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">タイトル <span className="text-red-500">*</span></label>
+            {hasKey && (
+              <button
+                type="button"
+                onClick={handleAiSuggest}
+                disabled={suggesting}
+                className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 disabled:opacity-40 flex items-center gap-1"
+              >
+                ✨ {suggesting ? "補完中..." : "AI補完"}
+              </button>
+            )}
+          </div>
           <input {...register("title", { required: "タイトルを入力してください" })} className="input" placeholder="例：契約書のレビュー" />
           {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
         </div>
@@ -397,6 +493,45 @@ export default function TaskFormPage() {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">メモ</label>
           <textarea {...register("memo")} className="input resize-none" rows={3} placeholder="詳細・参考情報など" />
         </div>
+
+        {!isEdit && hasKey && (
+          <div className="border border-purple-200 dark:border-purple-700 rounded-lg p-3 bg-purple-50 dark:bg-purple-900/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AIでサブタスクに分解</span>
+              <button
+                type="button"
+                onClick={handleAiDecompose}
+                disabled={decomposing}
+                className="text-xs px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-40 transition-colors"
+              >
+                {decomposing ? "分解中..." : "✨ 分解する"}
+              </button>
+            </div>
+            {aiSubtasks.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">生成されたサブタスク（タスク登録時に一括作成）:</p>
+                {aiSubtasks.map((s, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm bg-white dark:bg-gray-800 rounded px-2.5 py-1.5 border border-purple-100 dark:border-purple-800">
+                    <span className="text-purple-400 mt-0.5">•</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-gray-800 dark:text-gray-100">{s.title}</span>
+                      {s.estimated_minutes && (
+                        <span className="ml-2 text-xs text-gray-400">約{s.estimated_minutes}分</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAiSubtasks((prev) => prev.filter((_, j) => j !== i))}
+                      className="text-gray-300 hover:text-red-400 text-xs flex-shrink-0"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
           {showSaveTemplate ? (

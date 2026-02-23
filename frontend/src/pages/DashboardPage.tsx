@@ -54,8 +54,8 @@ export default function DashboardPage() {
     <div className="p-6 max-w-6xl mx-auto">
       {/* ヘッダー */}
       <div className="mb-6">
-        <p className="text-sm text-gray-500">{today}</p>
-        <h2 className="text-2xl font-bold text-gray-800 mt-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{today}</p>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">
           おはようございます、{user?.username} さん
         </h2>
       </div>
@@ -129,26 +129,26 @@ export default function DashboardPage() {
       {summaryLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="card h-24 animate-pulse bg-gray-100" />
+            <div key={i} className="card h-24 animate-pulse bg-gray-100 dark:bg-gray-700" />
           ))}
         </div>
       ) : summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="card text-center">
             <p className="text-3xl font-bold text-blue-600">{summary.total}</p>
-            <p className="text-sm text-gray-500 mt-1">総タスク数</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">総タスク数</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-green-600">{summary.achievement_rate}%</p>
-            <p className="text-sm text-gray-500 mt-1">完了率</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">完了率</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-orange-500">{summary.today_due}</p>
-            <p className="text-sm text-gray-500 mt-1">今日期限</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">今日期限</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-red-500">{summary.overdue}</p>
-            <p className="text-sm text-gray-500 mt-1">期限超過</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">期限超過</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-purple-600">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                   }`
                 : `${summary.weekly_actual_minutes}m`}
             </p>
-            <p className="text-sm text-gray-500 mt-1">今週の実績</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">今週の実績</p>
           </div>
         </div>
       )}
@@ -170,7 +170,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* 週次完了グラフ */}
           <div className="card">
-            <h4 className="font-semibold text-gray-700 mb-4">今週の完了タスク数</h4>
+            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">今週の完了タスク数</h4>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={summary.weekly_completed}>
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
@@ -189,9 +189,9 @@ export default function DashboardPage() {
 
           {/* カテゴリ別円グラフ */}
           <div className="card">
-            <h4 className="font-semibold text-gray-700 mb-4">カテゴリ別タスク分布</h4>
+            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">カテゴリ別タスク分布</h4>
             {summary.category_distribution.length === 0 ? (
-              <div className="h-44 flex items-center justify-center text-gray-400 text-sm">
+              <div className="h-44 flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">
                 データがありません
               </div>
             ) : (

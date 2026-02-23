@@ -91,9 +91,9 @@ export default function TaskCard({ task }: Props) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <Link
-            to={`/tasks/${task.id}/edit`}
-            className={`font-medium text-sm leading-5 hover:text-blue-600 transition-colors ${
-              isCompleted ? "line-through text-gray-400" : "text-gray-800"
+            to={`/tasks/${task.id}`}
+            className={`font-medium text-sm leading-5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
+              isCompleted ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-gray-100"
             }`}
           >
             {task.title}
@@ -104,13 +104,13 @@ export default function TaskCard({ task }: Props) {
           <PriorityBadge score={task.priority_score} breakdown={task.score_breakdown} />
         </div>
 
-        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">
+        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
           <span
             className={`${
               isOverdue
-                ? "text-red-600 font-semibold"
+                ? "text-red-600 dark:text-red-400 font-semibold"
                 : isDueToday
-                ? "text-orange-600 font-semibold"
+                ? "text-orange-600 dark:text-orange-400 font-semibold"
                 : ""
             }`}
           >
@@ -119,7 +119,7 @@ export default function TaskCard({ task }: Props) {
           </span>
 
           {task.category && (
-            <span className="bg-gray-100 px-2 py-0.5 rounded-full">
+            <span className="bg-gray-100 dark:bg-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">
               {task.category}
             </span>
           )}
@@ -166,11 +166,11 @@ export default function TaskCard({ task }: Props) {
         {!isCompleted && (
           <div className="mt-2">
             {isInProgress ? (
-              <span className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+              <span className="inline-flex items-center gap-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full font-medium">
                 ▶ 進行中
                 <button
                   onClick={handleToggleInProgress}
-                  className="ml-1 text-orange-400 hover:text-orange-600 leading-none"
+                  className="ml-1 text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 leading-none"
                   title="未着手に戻す"
                 >
                   ×
@@ -179,7 +179,7 @@ export default function TaskCard({ task }: Props) {
             ) : (
               <button
                 onClick={handleToggleInProgress}
-                className="text-xs text-gray-400 hover:text-orange-500 transition-colors"
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                 title="着手する"
               >
                 ▶ 着手

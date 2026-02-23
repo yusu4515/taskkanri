@@ -72,3 +72,28 @@ class ChangePasswordRequest(BaseModel):
         if not re.search(r"\d", v):
             raise ValueError("パスワードには数字を1文字以上含めてください")
         return v
+
+
+class AiKeyUpsert(BaseModel):
+    provider: str   # "openai" | "anthropic" | "gemini"
+    api_key: str
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        if v not in ("openai", "anthropic", "gemini"):
+            raise ValueError("プロバイダは openai / anthropic / gemini のいずれかを指定してください")
+        return v
+
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("APIキーを入力してください")
+        return v
+
+
+class AiKeyStatus(BaseModel):
+    has_key: bool
+    provider: Optional[str] = None

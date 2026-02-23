@@ -123,7 +123,7 @@ function SortableTaskCard({
         <button
           {...attributes}
           {...listeners}
-          className="flex-shrink-0 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing px-1 flex items-center text-lg select-none"
+          className="flex-shrink-0 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 cursor-grab active:cursor-grabbing px-1 flex items-center text-lg select-none"
           title="ドラッグして並び替え"
         >
           ⋮⋮
@@ -263,12 +263,12 @@ export default function TaskListPage() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold text-gray-800">タスク一覧</h2>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">タスク一覧</h2>
+          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm">
             <button
               onClick={() => { setViewMode("active"); setSelectedIds(new Set()); }}
               className={`px-3 py-1.5 font-medium transition-colors ${
-                viewMode === "active" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-50"
+                viewMode === "active" ? "bg-blue-500 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
               進行中
@@ -276,7 +276,7 @@ export default function TaskListPage() {
             <button
               onClick={() => { setViewMode("archive"); setSelectedIds(new Set()); }}
               className={`px-3 py-1.5 font-medium transition-colors ${
-                viewMode === "archive" ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-50"
+                viewMode === "archive" ? "bg-blue-500 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
               アーカイブ
@@ -299,8 +299,8 @@ export default function TaskListPage() {
 
       {/* 一括操作バー */}
       {selectedIds.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-4">
-          <span className="text-sm font-medium text-blue-700">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-4">
+          <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
             {selectedIds.size}件を選択中
           </span>
           <button
@@ -317,7 +317,7 @@ export default function TaskListPage() {
           </button>
           <button
             onClick={clearSelection}
-            className="text-sm text-gray-400 hover:text-gray-600 ml-auto"
+            className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 ml-auto"
           >
             選択を解除
           </button>
@@ -339,7 +339,7 @@ export default function TaskListPage() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 ×
               </button>
@@ -349,7 +349,7 @@ export default function TaskListPage() {
 
         {viewMode === "active" && (
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">ステータス</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ステータス</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as TaskStatus | "")}
@@ -363,7 +363,7 @@ export default function TaskListPage() {
         )}
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">カテゴリ</label>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">カテゴリ</label>
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -378,7 +378,7 @@ export default function TaskListPage() {
 
         {viewMode === "active" && (
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">並び順</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">並び順</label>
             <select
               value={sort}
               onChange={(e) => {
@@ -396,7 +396,7 @@ export default function TaskListPage() {
         )}
 
         <div className="self-end flex items-center gap-3">
-          <span className="text-sm text-gray-500">{data?.total ?? 0} 件</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{data?.total ?? 0} 件</span>
           {viewMode === "active" && sortedOtherTasks.length > 0 && (
             <button onClick={selectAll} className="text-xs text-blue-500 hover:text-blue-700">
               全選択
@@ -409,7 +409,7 @@ export default function TaskListPage() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="card h-16 animate-pulse bg-gray-100" />
+            <div key={i} className="card h-16 animate-pulse bg-gray-100 dark:bg-gray-700" />
           ))}
         </div>
       )}
@@ -430,13 +430,13 @@ export default function TaskListPage() {
       {!isLoading && (
         <section>
           {!isLoading && todayFocusTasks.length > 0 && topLevelOtherTasks.length > 0 && (
-            <h3 className="text-sm font-semibold text-gray-500 mb-3">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">
               {viewMode === "archive" ? "完了タスク" : "その他のタスク"}
             </h3>
           )}
 
           {topLevelOtherTasks.length === 0 && todayFocusTasks.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
+            <div className="text-center py-16 text-gray-400 dark:text-gray-500">
               <p className="text-5xl mb-4">{viewMode === "archive" ? "📦" : "📭"}</p>
               <p className="text-lg">
                 {viewMode === "archive" ? "アーカイブはありません" : "タスクがありません"}

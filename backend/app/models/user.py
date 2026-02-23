@@ -16,6 +16,8 @@ class User(Base):
     is_verified = Column(Boolean, default=True)  # Phase1はメール確認なしで有効化
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
+    ai_provider = Column(String(20), nullable=True)   # "openai" | "anthropic" | "gemini"
+    ai_api_key = Column(String(500), nullable=True)   # ユーザー自身のAPIキー
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime(timezone=True),

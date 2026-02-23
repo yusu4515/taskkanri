@@ -133,6 +133,31 @@ export interface Objective {
   updated_at: string;
 }
 
+export type AiProvider = "openai" | "anthropic" | "gemini";
+
+export interface AiKeyStatus {
+  has_key: boolean;
+  provider: AiProvider | null;
+}
+
+export interface AiSuggestResult {
+  due_date?: string;
+  importance?: number;
+  estimated_minutes?: number;
+  category?: string;
+  memo?: string;
+}
+
+export interface AiSubTask {
+  title: string;
+  estimated_minutes?: number;
+  memo?: string;
+}
+
+export interface AiDecomposeResult {
+  subtasks: AiSubTask[];
+}
+
 export const ESTIMATED_MINUTES_OPTIONS = [
   { value: 15, label: "15分" },
   { value: 30, label: "30分" },

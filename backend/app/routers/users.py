@@ -6,7 +6,7 @@ from app.core.security import verify_password, get_password_hash
 from app.models.task import Task, TaskStatus
 from app.models.user import User
 from app.routers.deps import get_current_user
-from app.schemas.user import UserResponse, ChangePasswordRequest
+from app.schemas.user import UserResponse, ChangePasswordRequest, AiKeyUpsert, AiKeyStatus
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -40,4 +40,33 @@ def delete_account(
         {"status": TaskStatus.deleted}
     )
     current_user.is_active = False
+    db.commit()
+
+
+@router.get("/me/ai-key/status", response_model=AiKeyStatus)
+def get_ai_key_status(current_user: User = Depends(get_current_user)):
+    return AiKeyStatus(
+        has_key=bool(current_user.ai_api_key),
+        provider=current_user.ai_provider,
+    )
+
+
+@router.put("/me/ai-key", status_code=status.HTTP_204_NO_CONTENT)
+def set_ai_key(
+    payload: AiKeyUpsert,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    current_user.ai_provider = payload.provider
+    current_user.ai_api_key = payload.api_key
+    db.commit()
+
+
+@router.delete("/me/ai-key", status_code=status.HTTP_204_NO_CONTENT)
+def delete_ai_key(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    current_user.ai_provider = None
+    current_user.ai_api_key = None
     db.commit()

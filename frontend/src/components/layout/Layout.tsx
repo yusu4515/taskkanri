@@ -23,7 +23,7 @@ function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
     <aside className="w-56 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
       <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
         <h1 className="text-xl font-bold text-blue-600">タスカン</h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">步務タスク管理</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">業務タスク管理</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
